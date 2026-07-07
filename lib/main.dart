@@ -14,8 +14,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:my_eado/car_3d_viewer.dart';
 
-import 'dart:async';
-
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api_service.dart';
