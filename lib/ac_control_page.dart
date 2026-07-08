@@ -31,7 +31,6 @@ class _ACControlPageState extends State<ACControlPage> {
   late bool _isOn;
   late int _vehicleTemp;
   late int _envTemp;
-  int _windPower = 7; // 1~7档
   Timer? _debounceTimer;
   bool _loading = false;
   // 期望状态（与首页控制按钮一致的逻辑）
@@ -86,29 +85,13 @@ class _ACControlPageState extends State<ACControlPage> {
     _debounceTimer = Timer(const Duration(milliseconds: 1500), () async {
       final resp = await widget.api.executeCommand('openair', extraParams: {
         'temperature': _temperature,
-        'windPower': _windPower,
+        'windPower': 7,
         'airModel': 0,
       });
       if (resp.code == 0) {
         _showSnackBar('温度已设置 $_temperature°');
       } else {
         _showSnackBar('调温失败: ${resp.msg}');
-      }
-    });
-  }
-
-  void _onWindPowerChange() {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 1500), () async {
-      final resp = await widget.api.executeCommand('openair', extraParams: {
-        'temperature': _temperature,
-        'windPower': _windPower,
-        'airModel': 0,
-      });
-      if (resp.code == 0) {
-        _showSnackBar('风档已设置 $_windPower');
-      } else {
-        _showSnackBar('设置失败: ${resp.msg}');
       }
     });
   }
@@ -275,53 +258,6 @@ class _ACControlPageState extends State<ACControlPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // 风档滑轨
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('风档',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF7D8A95))),
-                                Text('$_windPower',
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.white)),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            SliderTheme(
-                              data: SliderThemeData(
-                                activeTrackColor: const Color(0xFF5B7CF7),
-                                inactiveTrackColor: const Color(0xFF3A3F4E),
-                                thumbColor: Colors.white,
-                                thumbShape: const RoundSliderThumbShape(
-                                    enabledThumbRadius: 8),
-                                trackHeight: 4,
-                                overlayShape: SliderComponentShape.noOverlay,
-                                tickMarkShape: SliderTickMarkShape.noTickMark,
-                              ),
-                              child: Slider(
-                                min: 1,
-                                max: 7,
-                                divisions: 6,
-                                value: _windPower.toDouble(),
-                                onChanged: (v) {
-                                  final newWind = v.round();
-                                  if (newWind != _windPower) {
-                                    setState(() => _windPower = newWind);
-                                    _onWindPowerChange();
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       // 分隔线
                       Container(
                         height: 1,
@@ -350,9 +286,15 @@ class _ACControlPageState extends State<ACControlPage> {
                           // 电源按钮
                           GestureDetector(
                             onTap: _loading ? null : _togglePower,
-                            child: SizedBox(
+                            child: Container(
                               width: 56,
                               height: 56,
+                              decoration: BoxDecoration(
+                                color: _isOn
+                                    ? const Color(0xFF007AFF).withOpacity(0.7)
+                                    : const Color(0xFF2B3136),
+                                shape: BoxShape.circle,
+                              ),
                               child: _loading
                                   ? const Padding(
                                       padding: EdgeInsets.all(14),
