@@ -70,7 +70,7 @@ class Car3DViewerState extends State<Car3DViewer> {
       debugPrint('GLB size: ${bytes.length}');
       final b64 = base64Encode(bytes);
       debugPrint('Base64 size: ${b64.length}');
-      await _controller.runJavaScript("loadGLB('${b64}')");
+      await _controller.runJavaScript("loadGLB('$b64')");
       debugPrint('loadGLB called');
     } catch (e) {
       debugPrint('Error loading GLB: $e');

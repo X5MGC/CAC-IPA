@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="widget_config"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:shortcutShortLabel="@string/shortcut_widget_config"
+        android:shortcutLongLabel="@string/shortcut_widget_config">
+        <intent
+            android:action="com.myapp.my_eado.WIDGET_CONFIG"
+            android:targetPackage="com.myapp.my_eado"
+            android:targetClass="com.myapp.my_eado.MainActivity" />
+    </shortcut>
+</shortcuts>

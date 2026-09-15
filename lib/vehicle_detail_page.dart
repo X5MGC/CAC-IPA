@@ -42,6 +42,8 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
             right: 0,
             bottom: 0,
             child: Container(
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom),
               decoration: const BoxDecoration(
                 color: Color(0xCC1A1A2E),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -60,8 +62,10 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                     ),
                   ),
                   // 页面内容
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.27,
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.32,
+                    ),
                     child: PageView(
                       controller: _pageController,
                       onPageChanged: (i) => setState(() => _currentPage = i),
@@ -75,7 +79,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                   ),
                   // 分页指示器
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 16, top: 8),
+                    padding: const EdgeInsets.only(bottom: 12, top: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(4, (i) {
@@ -109,19 +113,40 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
 
   // ─── Page 1: 车身状态 ───
   Widget _buildPage1() {
-    final locks = [d['driverDoorLock'], d['passengerDoorLock'], d['leftRearDoorLock'], d['rightRearDoorLock']];
+    final locks = [
+      d['driverDoorLock'],
+      d['passengerDoorLock'],
+      d['leftRearDoorLock'],
+      d['rightRearDoorLock']
+    ];
     final lockOpen = locks.any((v) => v == 1);
 
-    final doors = [d['leftFrontDoor'], d['rightFrontDoor'], d['leftRearDoor'], d['rightRearDoor']];
+    final doors = [
+      d['leftFrontDoor'],
+      d['rightFrontDoor'],
+      d['leftRearDoor'],
+      d['rightRearDoor']
+    ];
     final doorOpen = doors.any((v) => v == 1);
 
-    final windows = [d['diverWindow'], d['passengerWindow'], d['leftRearWindow'], d['rightRearWindow']];
+    final windows = [
+      d['diverWindow'],
+      d['passengerWindow'],
+      d['leftRearWindow'],
+      d['rightRearWindow']
+    ];
     final windowOpen = windows.any((v) => v == 1);
 
     final sunroofOpen = d['sunroof'] == 1;
     final trunkOpen = d['trunk'] == 1;
 
-    final lights = [d['lowBeam'], d['highBeam'], d['frontFogLight'], d['rearFogLight'], d['positionLight']];
+    final lights = [
+      d['lowBeam'],
+      d['highBeam'],
+      d['frontFogLight'],
+      d['rearFogLight'],
+      d['positionLight']
+    ];
     final lightOn = lights.any((v) => v == 1);
 
     return _buildGrid([
@@ -141,7 +166,12 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
     final batteryOk = d['powerBatteryStatus'] == 0;
     final voltage = (d['batteryVoltage'] ?? 0).toString();
 
-    final systems = [d['absStatus'], d['engineSystemStatus'], d['transmissionSystemStatus'], d['airbagSystemStatus']];
+    final systems = [
+      d['absStatus'],
+      d['engineSystemStatus'],
+      d['transmissionSystemStatus'],
+      d['airbagSystemStatus']
+    ];
     final systemOk = systems.every((v) => v == 0);
 
     final envTemp = (d['environmentalTemp'] ?? 0).toString();
@@ -214,12 +244,15 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(item.label,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF7D8A95))),
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF7D8A95))),
                 const SizedBox(height: 6),
                 Text(item.value,
                     style: TextStyle(
                       fontSize: 16,
-                      color: item.isNormal ? Colors.white : const Color(0xFFFF5252),
+                      color: item.isNormal
+                          ? Colors.white
+                          : const Color(0xFFFF5252),
                     )),
               ],
             ),

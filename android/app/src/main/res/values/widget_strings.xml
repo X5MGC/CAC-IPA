@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">MyEADO 车辆小组件</string>
+    <string name="shortcut_widget_config">小组件定制</string>
+</resources>

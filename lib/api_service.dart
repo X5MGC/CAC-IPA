@@ -1,14 +1,21 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:basic_utils/basic_utils.dart';
 import 'package:pointycastle/export.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
   static const String _apiBase = 'https://m.iov.changan.com.cn';
   static const String _cacApiBase = 'https://incallapi.changan.com.cn';
   static const String _clientId = '2c918082632162010163388048d60158';
+
+  // 开放平台配置
+  static const String _openBase = 'https://open.iov.changan.com.cn';
+  static const String _openClientId = 'b235afd313004785bfde580c188c47bb';
+  static const String _openClientSecret = 'YjIzNWFmZDMxMzAwNDc4NQ==';
 
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -21,6 +28,15 @@ class ApiService {
   int _expiresAt = 0;
   String? _phone;
   String? _carId;
+  String? _deviceId;
+
+  // 开放平台 token
+  String? _openAccessToken;
+  String? _openRefreshToken;
+  int _openExpiresAt = 0;
+  String? _openUid;
+  String? _openSecretKey;
+  String? _lastOpenError;
 
   void init() {
     _dio = Dio(BaseOptions(
@@ -39,6 +55,26 @@ class ApiService {
     _expiresAt = prefs.getInt('expires_at') ?? 0;
     _carId = prefs.getString('carId');
     _phone = prefs.getString('phone');
+    // 设备ID：从缓存读取或获取真实 Android ID
+    _deviceId = prefs.getString('device_id');
+    if (_deviceId == null || _deviceId!.isEmpty) {
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        final androidInfo = await deviceInfo.androidInfo;
+        _deviceId = (androidInfo.data['androidId'] as String?) ??
+            '${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}${Random().nextInt(0xFFFF).toRadixString(16).padLeft(4, '0')}';
+      } catch (_) {
+        _deviceId =
+            '${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}${Random().nextInt(0xFFFF).toRadixString(16).padLeft(4, '0')}';
+      }
+      await prefs.setString('device_id', _deviceId!);
+    }
+    // 加载开放平台 token
+    _openAccessToken = prefs.getString('open_access_token');
+    _openRefreshToken = prefs.getString('open_refresh_token');
+    _openExpiresAt = prefs.getInt('open_expires_at') ?? 0;
+    _openUid = prefs.getString('open_uid');
+    _openSecretKey = prefs.getString('open_secret_key');
   }
 
   Future<void> _saveTokens(Map<String, dynamic> data) async {
@@ -107,6 +143,228 @@ class ApiService {
   Future<bool> ensureToken() async {
     if (isLoggedIn) return true;
     return await refreshToken();
+  }
+
+  // ==================== 开放平台 Token 管理 ====================
+
+  bool get _isOpenTokenValid {
+    return _openAccessToken != null &&
+        _openAccessToken!.isNotEmpty &&
+        DateTime.now().millisecondsSinceEpoch < _openExpiresAt - 60000;
+  }
+
+  /// 打开 app 时调用：换取或刷新开放平台 token
+  /// 流程：generate → authorize → oauth/token
+  Future<void> ensureOpenToken() async {
+    _lastOpenError = null;
+    if (_isOpenTokenValid) return;
+    if (_openRefreshToken != null && _openRefreshToken!.isNotEmpty) {
+      if (await _refreshOpenToken()) return;
+    }
+    await _exchangeForOpenToken();
+  }
+
+  /// generate → authorize → oauth/token
+  Future<bool> _exchangeForOpenToken() async {
+    if (_accessToken == null || _accessToken!.isEmpty) {
+      _lastOpenError = '未登录引力域';
+      return false;
+    }
+    try {
+      final cleanDio = Dio();
+
+      // 步骤1: generate 拿 qrcode_id
+      final qrId = await _openGenerate(cleanDio);
+      if (qrId == null) return false;
+
+      // 步骤2: authorize 拿 code
+      final code = await _openAuthorize(cleanDio, qrId);
+      if (code == null) return false;
+
+      // 步骤3: oauth/token 换 access_token + refresh_token
+      return await _openExchangeCode(cleanDio, code);
+    } catch (e) {
+      _lastOpenError = '换取异常: $e';
+    }
+    return false;
+  }
+
+  /// 步骤1: POST /oauth/api/qrcode/generate → 响应头 qrcode_id
+  Future<String?> _openGenerate(Dio cleanDio) async {
+    final ts = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+    final deviceId = 'f${_accessToken!.substring(0, 15)}'; // 16 hex
+
+    final params = {
+      'client_id': _openClientId,
+      'device_id': deviceId,
+      'nonce': 'WYYL',
+      'size': 'L',
+      'state': 'OPPOWATCH',
+      'timestamp': ts,
+      'appCode': 'usercenter',
+    };
+    params['sign'] = _calcOpenSign(params);
+
+    final resp = await cleanDio.post(
+      '$_openBase/oauth/api/qrcode/generate',
+      data: Uri(queryParameters: params).query,
+      options: Options(
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        responseType: ResponseType.bytes,
+        validateStatus: (s) => s != null && s < 500,
+      ),
+    );
+    final qrId = resp.headers.value('qrcode_id') ??
+        resp.headers.value('qrcodeId') ??
+        resp.headers.value('X-Qrcode-Id');
+    if (qrId != null) return qrId;
+
+    _lastOpenError = 'generate 未返回 qrcode_id';
+    return null;
+  }
+
+  /// 步骤2: POST incallapi/oauth/api/qrcode/authorize → 授权码
+  Future<String?> _openAuthorize(Dio cleanDio, String qrId) async {
+    final resp = await cleanDio.post(
+      '$_cacApiBase/oauth/api/qrcode/authorize',
+      data: 'token=$_accessToken&qrcodeId=$qrId',
+      options: Options(
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      ),
+    );
+    final data = resp.data;
+    if (data['success'] == true && data['data'] != null) {
+      return data['data'] as String;
+    }
+    _lastOpenError = 'authorize失败: ${data['msg'] ?? data.toString()}';
+    return null;
+  }
+
+  /// 步骤3: POST /oauth/token (authorization_code) → access_token + refresh_token
+  Future<bool> _openExchangeCode(Dio cleanDio, String code) async {
+    final resp = await cleanDio.post(
+      '$_openBase/oauth/token',
+      data: 'redict_uri=&code=$code&grant_type=authorization_code'
+          '&client_secret=$_openClientSecret&client_id=$_openClientId',
+      options: Options(
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      ),
+    );
+    return _saveOpenTokenData(resp.data);
+  }
+
+  /// 刷新: POST /oauth/token (refresh_token)
+  Future<bool> _refreshOpenToken() async {
+    if (_openRefreshToken == null || _openRefreshToken!.isEmpty) return false;
+    try {
+      final cleanDio = Dio();
+      final resp = await cleanDio.post(
+        '$_openBase/oauth/token',
+        data: 'redict_uri=&refresh_token=$_openRefreshToken'
+            '&grant_type=refresh_token'
+            '&client_secret=$_openClientSecret&client_id=$_openClientId',
+        options: Options(
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        ),
+      );
+      return _saveOpenTokenData(resp.data);
+    } catch (e) {
+      _lastOpenError = '刷新异常: $e';
+    }
+    return false;
+  }
+
+  /// 保存开放平台 token 数据
+  bool _saveOpenTokenData(dynamic data) {
+    if (data['access_token'] != null) {
+      _openAccessToken = data['access_token'];
+      _openRefreshToken = data['refresh_token'] ?? _openRefreshToken;
+      _openUid = data['uid'] ?? _openUid;
+      _openSecretKey = data['secret_key'] ?? _openSecretKey;
+      _openExpiresAt = DateTime.now().millisecondsSinceEpoch +
+          ((data['expires_in'] as int?) ?? 86400) * 1000;
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString('open_access_token', _openAccessToken ?? '');
+        prefs.setString('open_refresh_token', _openRefreshToken ?? '');
+        prefs.setInt('open_expires_at', _openExpiresAt);
+        if (_openUid != null) prefs.setString('open_uid', _openUid!);
+        if (_openSecretKey != null) {
+          prefs.setString('open_secret_key', _openSecretKey!);
+        }
+      });
+      return true;
+    }
+    _lastOpenError =
+        'token换取失败: ${data['error_description'] ?? data.toString()}';
+    return false;
+  }
+
+  /// SignUtil: 去掉 appCode/sign，加 appKey，key排序拼接，SHA256 大写
+  String _calcOpenSign(Map<String, String> params) {
+    final p = Map<String, String>.from(params);
+    p.remove('appCode');
+    p.remove('sign');
+    p['appKey'] = _openClientSecret;
+    final keys = p.keys.toList()..sort();
+    final buf = StringBuffer();
+    for (final k in keys) {
+      final v = p[k];
+      if (v != null && v.isNotEmpty) {
+        buf.write('$k=$v&');
+      }
+    }
+    final bytes = utf8.encode(buf.toString());
+    final digest = SHA256Digest().process(Uint8List.fromList(bytes));
+    return digest
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join()
+        .toUpperCase();
+  }
+
+  /// 通过开放平台 (openc-apigw) 执行空调指令
+  Future<ApiResponse> executeACCommand(String cmd) async {
+    await ensureOpenToken();
+    if (!_isOpenTokenValid) {
+      return ApiResponse(
+          code: -1, msg: '空调token获取失败: ${_lastOpenError ?? "未知原因"}');
+    }
+    if (_carId == null || _carId!.isEmpty) {
+      return ApiResponse(code: -1, msg: '未选择车辆');
+    }
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final body = jsonEncode({
+        'mapArgsJson': '{}',
+        'senderType': 'APP',
+        'cmd': cmd,
+        'carId': _carId,
+      });
+      final resp = await Dio().post(
+        '$_openBase/openc-apigw/vrtm-agent/api/v2/open/car-control/$cmd',
+        data: body,
+        options: Options(
+          headers: {
+            'x-vcs-nonce': 'WYYL',
+            'x-vcs-user-access-token': _openAccessToken,
+            'x-vcs-timestamp': timestamp,
+            'Content-Type': 'application/json; charset=utf-8',
+            'User-Agent': 'okhttp/3.10.0',
+          },
+        ),
+      );
+      final data = resp.data;
+      if (data['success'] == true) {
+        // 开放平台返回taskId时，复用V5轮询接口等待执行结果
+        final taskId = data['data'] != null ? data['data']['taskId'] : null;
+        if (taskId != null) {
+          return await pollControlStatus(taskId);
+        }
+        return ApiResponse(code: 0, msg: data['msg'] ?? '指令已发送');
+      }
+      return ApiResponse(code: -1, msg: data['msg'] ?? '指令发送失败');
+    } on DioException catch (e) {
+      return ApiResponse(code: -1, msg: _getErrorMessage(e));
+    }
   }
 
   // 发送验证码
@@ -233,6 +491,22 @@ class ApiService {
     }
   }
 
+  // 获取pinToken (v5新增步骤)
+  Future<ApiResponse> getPinToken(String s) async {
+    try {
+      final resp = await _dio.post(
+        '$_apiBase/app2/api/v5/control/get-pin-token?token=$_accessToken&s=${Uri.encodeComponent(s)}',
+        data: jsonEncode({'carId': _carId, 'deviceId': _deviceId}),
+        options: Options(
+          headers: {'Content-Type': 'application/json; charset=utf-8'},
+        ),
+      );
+      return ApiResponse.fromJson(resp.data);
+    } on DioException catch (e) {
+      return ApiResponse(code: -1, msg: _getErrorMessage(e));
+    }
+  }
+
   // RSA-OAEP-SHA256 加密
   String rsaOAEPEncrypt(String plaintext, String publicKeyB64) {
     final pem =
@@ -261,7 +535,8 @@ class ApiService {
   }
 
   // 更新控车码开关状态
-  Future<ApiResponse> updatePinStatus(bool pinSwitch, {String authCode = ''}) async {
+  Future<ApiResponse> updatePinStatus(bool pinSwitch,
+      {String authCode = ''}) async {
     if (!await ensureToken()) {
       return ApiResponse(code: -1, msg: '登录已过期');
     }
@@ -316,8 +591,16 @@ class ApiService {
       });
       final s = rsaOAEPEncrypt(plaintext, keyRes.data);
 
+      // v5: 获取pinToken
+      final ptRes = await getPinToken(s);
+      if (ptRes.code != 0) return ApiResponse(code: -1, msg: 'pinToken获取失败');
+
+      // v5: 生成control-trace-id
+      final traceId =
+          'tlv_cmd_req_${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(999999)}';
+
       String body =
-          'carId=$_carId&token=$_accessToken&isNev=0&s=${Uri.encodeComponent(s)}';
+          's=${Uri.encodeComponent(s)}&isNev=0&token=$_accessToken&carId=$_carId&pinToken=${ptRes.data}&deviceId=$_deviceId';
       if (extraParams != null) {
         for (final entry in extraParams.entries) {
           body +=
@@ -326,17 +609,23 @@ class ApiService {
       }
 
       final resp = await _dio.post(
-        '$_apiBase/app2/api/v3/control/execute',
+        '$_apiBase/app2/api/v5/control/execute',
         data: body,
         options: Options(
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'control-trace-id': traceId,
+          },
         ),
       );
       final data = ApiResponse.fromJson(resp.data);
       // code:3 表示需要输入控车码，直接返回让UI层处理
-      if (data.code == 3) return ApiResponse(code: 3, msg: data.msg ?? '输入控车码');
-      if (data.code != 0)
+      if (data.code == 3) {
+        return ApiResponse(code: 3, msg: data.msg ?? '输入控车码');
+      }
+      if (data.code != 0) {
         return ApiResponse(code: -1, msg: data.msg ?? '指令发送失败');
+      }
 
       // 轮询指令执行状态
       if (data.data != null && data.data['taskId'] != null) {
@@ -365,8 +654,9 @@ class ApiService {
         final data = ApiResponse.fromJson(resp.data);
         if (data.code == 0 && data.data != null) {
           final status = data.data['handleStatus'];
-          if (status == 'Completed')
+          if (status == 'Completed') {
             return ApiResponse(code: 0, data: data.data);
+          }
           if (status == 'Failed') {
             return ApiResponse(
                 code: -1, msg: data.data['handleStatusDesc'] ?? '指令执行失败');

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg_rounded"
+    android:gravity="center"
+    android:padding="6dp">
+
+    <TextView
+        android:id="@+id/widget_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text=""
+        android:textSize="15sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold" />
+
+    <!-- 控制按钮区域：正方形按钮居中，保持圆形不变形 -->
+    <LinearLayout
+        android:id="@+id/widget_control_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:id="@+id/widget_btn_1"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/widget_btn_1_icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:background="@drawable/widget_btn_bg"
+                android:padding="6dp"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/widget_btn_2"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/widget_btn_2_icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:background="@drawable/widget_btn_bg"
+                android:padding="6dp"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/widget_btn_3"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/widget_btn_3_icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:background="@drawable/widget_btn_bg"
+                android:padding="6dp"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/widget_btn_4"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/widget_btn_4_icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:background="@drawable/widget_btn_bg"
+                android:padding="6dp"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/widget_btn_5"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/widget_btn_5_icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:background="@drawable/widget_btn_bg"
+                android:padding="6dp"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/widget_btn_6"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+            <ImageView
+                android:id="@+id/widget_btn_6_icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:background="@drawable/widget_btn_bg"
+                android:padding="6dp"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+    </LinearLayout>
+
+</LinearLayout>

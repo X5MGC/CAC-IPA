@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg_rounded"
+    android:gravity="center"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:id="@+id/widget_grid_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/widget_btn_row1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <FrameLayout
+                android:id="@+id/widget_btn_1"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_1_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_1_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/widget_btn_2"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_2_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_2_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/widget_btn_3"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_3_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_3_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/widget_btn_4"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_4_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_4_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_btn_row2"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <FrameLayout
+                android:id="@+id/widget_btn_5"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_5_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_5_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/widget_btn_6"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_6_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_6_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/widget_btn_7"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_7_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_7_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/widget_btn_8"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:padding="2dp"
+                android:visibility="visible">
+                <ImageView
+                    android:id="@+id/widget_btn_8_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/widget_btn_bg"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:visibility="visible" />
+                <TextView
+                    android:id="@+id/widget_btn_8_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:visibility="gone" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

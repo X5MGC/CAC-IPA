@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 
@@ -31,7 +30,6 @@ class _ACControlPageState extends State<ACControlPage> {
   late bool _isOn;
   late int _vehicleTemp;
   late int _envTemp;
-  Timer? _debounceTimer;
   bool _loading = false;
   // 期望状态（与首页控制按钮一致的逻辑）
   bool? _expectedOn;
@@ -49,7 +47,6 @@ class _ACControlPageState extends State<ACControlPage> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -77,62 +74,16 @@ class _ACControlPageState extends State<ACControlPage> {
     });
   }
 
-  void _onTempChange(int delta) {
-    setState(() {
-      _temperature = (_temperature + delta).clamp(16, 32);
-    });
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 1500), () async {
-      final resp = await widget.api.executeCommand('openair', extraParams: {
-        'temperature': _temperature,
-        'windPower': 7,
-        'airModel': 0,
-      });
-      if (resp.code == 0) {
-        _showSnackBar('温度已设置 $_temperature°');
-      } else {
-        _showSnackBar('调温失败: ${resp.msg}');
-      }
-    });
-  }
-
   Future<void> _togglePower() async {
     setState(() => _loading = true);
-    final cmd = _isOn ? 'closeair' : 'openair';
+    final cmd = _isOn ? 'closeAir' : 'openAir';
     _showSnackBar('指令发送中...');
-    final resp = await widget.api.executeCommand(cmd);
+    final resp = await widget.api.executeACCommand(cmd);
     if (resp.code == 0) {
       final expectedOn = !_isOn;
       _expectedOn = expectedOn;
       setState(() => _isOn = expectedOn);
       _showSnackBar(expectedOn ? '空调已开启' : '空调已关闭');
-    } else {
-      _showSnackBar('操作失败: ${resp.msg}');
-    }
-    setState(() => _loading = false);
-  }
-
-  Future<void> _setMode(String mode) async {
-    int temp;
-    String msg;
-    if (mode == 'summer') {
-      temp = 18;
-      msg = '夏季模式已开启';
-    } else {
-      temp = 32;
-      msg = '冬季模式已开启';
-    }
-    setState(() {
-      _loading = true;
-      _temperature = temp;
-    });
-    final resp = await widget.api.executeCommand('openair', extraParams: {
-      'temperature': temp,
-      'windPower': 7,
-      'airModel': 0,
-    });
-    if (resp.code == 0) {
-      _showSnackBar(msg);
     } else {
       _showSnackBar('操作失败: ${resp.msg}');
     }
@@ -174,7 +125,7 @@ class _ACControlPageState extends State<ACControlPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
                 child:
@@ -198,70 +149,24 @@ class _ACControlPageState extends State<ACControlPage> {
                   padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
                   child: Column(
                     children: [
-                      // 温度 ± 按钮
-                      Transform.translate(
-                        offset: const Offset(0, -20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // 减温按钮
-                            GestureDetector(
-                              onTap: () => _onTempChange(-1),
-                              child: Container(
-                                width: 64,
-                                height: 64,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2B3136),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Center(
-                                  child: Text('−',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 28,)),
-                                ),
-                              ),
-                            ),
-                            // 温度显示
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Text('$_temperature°',
-                                      style: const TextStyle(
-                                          fontSize: 48,
-                                          color: Colors.white)),
-                                  const Text('预设温度',
-                                      style: TextStyle(
-                                          fontSize: 14,
-                                          color: Color(0xFF7D8A95))),
-                                ],
-                              ),
-                            ),
-                            // 升温按钮
-                            GestureDetector(
-                              onTap: () => _onTempChange(1),
-                              child: Container(
-                                width: 64,
-                                height: 64,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2B3136),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Center(
-                                  child: Text('+',
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 28)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      // 温度显示：预设温度 + 温度值
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('预设温度',
+                              style: TextStyle(
+                                  fontSize: 14, color: Color(0xFF7D8A95))),
+                          const SizedBox(width: 12),
+                          Text('$_temperature°',
+                              style: const TextStyle(
+                                  fontSize: 48, color: Colors.white)),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       // 分隔线
                       Container(
                         height: 1,
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         margin: const EdgeInsets.only(bottom: 20),
                       ),
                       // 车内/车外温度 + 电源按钮
@@ -278,8 +183,7 @@ class _ACControlPageState extends State<ACControlPage> {
                                 const SizedBox(height: 4),
                                 Text('$_vehicleTemp°',
                                     style: const TextStyle(
-                                        fontSize: 24,
-                                        color: Colors.white)),
+                                        fontSize: 24, color: Colors.white)),
                               ],
                             ),
                           ),
@@ -291,7 +195,8 @@ class _ACControlPageState extends State<ACControlPage> {
                               height: 56,
                               decoration: BoxDecoration(
                                 color: _isOn
-                                    ? const Color(0xFF007AFF).withOpacity(0.7)
+                                    ? const Color(0xFF007AFF)
+                                        .withValues(alpha: 0.7)
                                     : const Color(0xFF2B3136),
                                 shape: BoxShape.circle,
                               ),
@@ -321,61 +226,11 @@ class _ACControlPageState extends State<ACControlPage> {
                                 const SizedBox(height: 4),
                                 Text('$_envTemp°',
                                     style: const TextStyle(
-                                        fontSize: 24,
-                                        color: Colors.white)),
+                                        fontSize: 24, color: Colors.white)),
                               ],
                             ),
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // 模式按钮卡片
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF28293D),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // 夏季模式
-                      GestureDetector(
-                        onTap: _loading ? null : () => _setMode('summer'),
-                        child: Container(
-                          width: 56,
-                          height: 56,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF2B3136),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Image.asset(
-                            'assets/images/icons/changan/snow.png',
-                            width: 24,
-                            height: 24,
-                          ),
-                        ),
-                      ),
-                      // 冬季模式
-                      GestureDetector(
-                        onTap: _loading ? null : () => _setMode('winter'),
-                        child: Container(
-                          width: 56,
-                          height: 56,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF2B3136),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Image.asset(
-                            'assets/images/icons/changan/sun.png',
-                            width: 24,
-                            height: 24,
-                          ),
-                        ),
                       ),
                     ],
                   ),
